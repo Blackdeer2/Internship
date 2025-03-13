@@ -18,12 +18,10 @@ private with sharing class ContactTriggerTest {
         Account acc1 = accounts[0];
         Account acc2 = accounts[1];
 
+        Test.startTest();
         Contact con1 = new Contact(LastName = 'Contact 1', AccountId = acc1.Id);
         Contact con2 = new Contact(LastName = 'Contact 2', AccountId = acc2.Id);
         insert new List<Contact>{ con1, con2 };
-
-        Test.startTest();
-        ContactService.conectlastContactToAccount(new List<Contact>{ con1, con2 });
         Test.stopTest();
 
         Account updatedAcc1 = [SELECT Last_Contact__c FROM Account WHERE Id = :acc1.Id];
