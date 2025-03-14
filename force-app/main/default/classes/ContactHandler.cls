@@ -26,7 +26,7 @@ public with sharing class ContactHandler extends TriggerHandler {
             System.debug('Exception in afterInsert of ContactHandler: ' + e.getMessage());
         }
     }
-
+  
     public override void beforeUpdate() {
         try {
             ContactService.validationOfPhoneInContact(triggerNew);
