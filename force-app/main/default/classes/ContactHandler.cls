@@ -11,13 +11,27 @@ public with sharing class ContactHandler extends TriggerHandler {
         this.triggerMapOld = (Map<Id, Contact>) Trigger.oldMap;
     }
 
+    public override void beforeInsert() {
+        try {
+           ContactService.validationOfPhoneInContact(triggerNew); 
+        } catch (Exception e) {
+            System.debug('Exception in beforeInsert of ContactHandler: ' + e.getMessage());
+        }
+    }
+
     public override void afterInsert() {
         try {
             ContactService.conectlastContactToAccount(triggerNew);
-        } catch (DmlException e) {
-            System.debug('DML Exception in afterInsert of ContactHandler: ' + e.getMessage());
         } catch (Exception e) {
             System.debug('Exception in afterInsert of ContactHandler: ' + e.getMessage());
+        }
+    }
+  
+    public override void beforeUpdate() {
+        try {
+            ContactService.validationOfPhoneInContact(triggerNew);
+        } catch (Exception e) {
+            System.debug('Exception in beforeUpdate of ContactHandler: ' + e.getMessage());
         }
     }
 }

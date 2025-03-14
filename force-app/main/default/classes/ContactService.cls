@@ -23,4 +23,15 @@ public with sharing class ContactService {
             update accountsToUpdate;
         }
     }
+
+    public static void validationOfPhoneInContact(List<Contact> contacts){
+        if(contacts == null || contacts.isEmpty()){
+            return;
+        }
+        for(Contact c : contacts){
+            if(String.isBlank(c.Phone) || !Pattern.matches('^[0-9]+$', c.Phone) || c.Phone.length() < 10 || c.Phone.length() > 12){
+                c.Phone.addError('The Phone field must contain only numbers and be between 10 and 12 characters long.');
+            }
+        }
+    }
 }

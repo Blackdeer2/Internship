@@ -20,5 +20,5 @@ public with sharing class AccountHandler extends TriggerHandler {
         } catch (Exception e) {
             System.debug('Exception in afterInsert of AccountHandler: ' + e.getMessage());
         }
-    } 
+    }
 }
