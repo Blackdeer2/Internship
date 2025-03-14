@@ -4,7 +4,7 @@ private with sharing class ContactTriggerTest {
 
     @TestSetup
     static void setupTestData() {
-        // Створення тестових акаунтів
+        
         Account acc1 = new Account(Name = 'Test Account 1');
         insert acc1;
 
