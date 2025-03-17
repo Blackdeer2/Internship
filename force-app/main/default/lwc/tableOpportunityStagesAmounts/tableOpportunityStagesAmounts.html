@@ -8,4 +8,17 @@
         </lightning-datatable>
 
     </lightning-card>
+
+        <lightning-accordion  allow-multiple-sections-open onsectiontoggle={handleSectionToggle} active-section-name={activeSections}>
+        <template for:each={lol} for:item="stage">
+        <lightning-accordion-section key={stage} name={stage} label={stage}>
+            <p>This is the content area for section A.</p>
+            <p>Donec vitae tellus egestas, faucibus ipsum ac, imperdiet erat. Nam venenatis non ante at sagittis.
+                Integer vel purus eget nunc semper placerat. Nam tristique quam leo, et posuere enim condimentum quis.
+                Ut sagittis libero id lectus tempor maximus. Nunc ut tincidunt eros, a hendrerit leo. Suspendisse quis
+                fermentum dolor. Nulla euismod consectetur leo, id condimentum nunc consequat quis.</p>
+        </lightning-accordion-section>
+    </template>
+
+    </lightning-accordion>
 </template>

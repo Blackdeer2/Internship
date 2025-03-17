@@ -7,6 +7,7 @@ const ALL_STAGES = [
     'Negotiation/Review', 'Closed Won', 'Closed Lost'
 ];
 export default class TableOpportunityStagesAmounts extends LightningElement {
+    lol=ALL_STAGES;
     @api recordId;
     @track columns = [];
     @track tableData = [];
@@ -78,5 +79,16 @@ export default class TableOpportunityStagesAmounts extends LightningElement {
     handleSwitch(){
         this.isVertical =!this.isVertical;
         this.updateTable(this.data);
+    }
+
+    handleSectionToggle(event) {
+        const openSections = event.detail.openSections;
+
+        if (openSections.length === 0) {
+            this.activeSectionsMessage = 'All sections are closed';
+        } else {
+            this.activeSectionsMessage =
+                'Open sections: ' + openSections.join(', ');
+        }
     }
 }
