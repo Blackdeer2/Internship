@@ -11,7 +11,7 @@ export default class TableOpportunityStagesAmounts extends LightningElement {
     @track columns = [];
     @track tableData = [];
     @track data;
-    isVertical = true;
+    isVertical = false;
 
     @wire(getStagesWithTotalAmount, { accountId: '$recordId' })
     wiredStages({ error, data }) {
@@ -33,28 +33,31 @@ export default class TableOpportunityStagesAmounts extends LightningElement {
         }
     }
 
-    generateHorizontalTable(data){
+    generateHorizontalTable(data) {
+        this.columns = [
+            { label: 'Opportunity', fieldName: 'opportunityName', type: 'text' },
+            ...ALL_STAGES.map(stage => ({
+                label: stage,
+                fieldName: stage,
+                type: 'text'
+            }))
+        ];
 
-        this.columns = ALL_STAGES.map(stage => ({
-            label: stage,
-            fieldName: stage,
-            type: 'text'
-        }));
-
-        const rowDataTotal = { id: 'totalRow', label: 'Total Amount' };
-        const rowDataOpportunities = { id: 'opportunitiesRow', label: 'Opportunities' };
-
-        const amounts = data.amounts;
-        const opportunities = data.opportunities;
-
-        ALL_STAGES.forEach(stage => {
-            rowDataTotal[stage] = amounts[stage];
-            rowDataOpportunities[stage] = opportunities[stage] ? opportunities[stage].join('\n') : '-';
+        this.tableData = data.listOpp.map(opp => {
+            let row = { opportunityName: opp.Name };
+            ALL_STAGES.forEach(stage => {
+                row[stage] = opp.StageName === stage ? opp.Amount : 0;
+            });
+            return row;
         });
 
-        this.tableData = [rowDataTotal, rowDataOpportunities];
+        let totalRow = { opportunityName: 'Total Amount' };
+        ALL_STAGES.forEach(stage => {
+            totalRow[stage] = data.amounts[stage] || 0;
+        });
+        this.tableData.unshift(totalRow);
     }
-
+    
     
     generateVerticalTable(data){
 
@@ -68,7 +71,7 @@ export default class TableOpportunityStagesAmounts extends LightningElement {
             id: stage,
             stage: stage,
             totalAmount: data.amounts[stage] || 0,
-            opportunities: data.opportunities[stage] ? data.opportunities[stage].join(', ') : '-'
+            opportunities: data.opportunities[stage] ? data.opportunities[stage].map(opp => opp.Name).join(', ') : '-'
         }));
     }
 

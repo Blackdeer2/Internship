@@ -55,22 +55,23 @@ public with sharing class OpportunityService {
             stagesWithTotalAmount.put((String) result.get('StageName'), (Decimal) result.get('totalAmount'));
         }
     
-        Map<String, List<String>> stageOpportunities = new Map<String, List<String>>();
+        Map<String, List<Opportunity>> stageOpportunities = new Map<String, List<Opportunity>>();
         List<Opportunity> opportunities = [
-            SELECT Name, StageName 
+            SELECT Id, Name, StageName, Amount 
             FROM Opportunity 
             WHERE AccountId = :accountId
         ];
         
         for (Opportunity opp : opportunities) {
             if (!stageOpportunities.containsKey(opp.StageName)) {
-                stageOpportunities.put(opp.StageName, new List<String>());
+                stageOpportunities.put(opp.StageName, new List<Opportunity>());
             }
-            stageOpportunities.get(opp.StageName).add(opp.Name);
+            stageOpportunities.get(opp.StageName).add(opp);
         }
     
         stagesData.put('amounts', stagesWithTotalAmount);
         stagesData.put('opportunities', stageOpportunities);
+        stagesData.put('listOpp', opportunities);
     
         return stagesData;
     }
