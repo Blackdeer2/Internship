@@ -38,4 +38,19 @@ public with sharing class OpportunityService {
             }
         }
     }
+
+    @AuraEnabled(cacheable=true)
+    public static Map<String, Decimal> getStagesWithTotalAmount(Id accountId){
+        Map<String, Decimal> stagesWithTotalAmount = new Map<String, Decimal>();
+        List<AggregateResult> results = [SELECT StageName, SUM(Amount) totalAmount 
+                                            FROM Opportunity 
+                                            WHERE AccountId = :accountId 
+                                            GROUP BY StageName];
+
+        for(AggregateResult result : results){
+            stagesWithTotalAmount.put((String)result.get('StageName'), (Decimal)result.get('totalAmount'));
+        }
+
+        return stagesWithTotalAmount;
+    }
 }
