@@ -7,30 +7,24 @@ const ALL_STAGES = [
     'Negotiation/Review', 'Closed Won', 'Closed Lost'
 ];
 export default class TableOpportunityStagesAmounts extends LightningElement {
-    lol=ALL_STAGES;
+    stages=ALL_STAGES;
     @api recordId;
     @track columns = [];
     @track tableData = [];
     @track data;
     isVertical = false;
+    opportunitiesByStage = {};
 
     @wire(getStagesWithTotalAmount, { accountId: '$recordId' })
     wiredStages({ error, data }) {
         if (data) {
             console.log('Raw Data from Apex:', JSON.stringify(data));
             this.data = data;
-            this.updateTable(data);
+            this.generateHorizontalTable(data);
+            this.opportunitiesByStage = this.processData(data);
 
         } else if (error) {
             console.error('Error fetching stages with total amount:', error);
-        }
-    }
-
-    updateTable(data){
-        if(this.isVertical){
-            this.generateVerticalTable(data);
-        }else{
-            this.generateHorizontalTable(data);
         }
     }
 
@@ -76,19 +70,29 @@ export default class TableOpportunityStagesAmounts extends LightningElement {
         }));
     }
 
+    processData(data) {
+        let stageData = {};
+        this.stages.forEach(stage => {
+            stageData[stage] = data.opportunities[stage] || [];
+        });
+        return stageData;
+    }
+    
+
+    get opportunitiesList() {
+        return this.stages.map(stage => {
+            const opportunities = this.opportunitiesByStage[stage] || [];
+            const totalAmount = opportunities.reduce((sum, opp) => sum + (opp.Amount || 0), 0);
+            
+            return {
+                stageLabel: `${stage} - Total: $${totalAmount}`,
+                opportunities
+            };
+        });
+    }
+      
     handleSwitch(){
         this.isVertical =!this.isVertical;
         this.updateTable(this.data);
-    }
-
-    handleSectionToggle(event) {
-        const openSections = event.detail.openSections;
-
-        if (openSections.length === 0) {
-            this.activeSectionsMessage = 'All sections are closed';
-        } else {
-            this.activeSectionsMessage =
-                'Open sections: ' + openSections.join(', ');
-        }
     }
 }
