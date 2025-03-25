@@ -1,33 +1,37 @@
 public with sharing class SalesforcedataSend {
 
     @future(callout=true)
-    public static void createRecordTargetOrg(){
+public static void createRecordTargetOrg() {
 
-        List<Account> accounts  = [SELECT Id, Name FROM Account];
+    Account acc = [SELECT Id, Name, External_Id__c FROM Account LIMIT 1];
 
-        if (accounts.isEmpty()) {
-            System.debug('No records found');
-            return;
-        }
+    // Створення Map з потрібними полями
+    Map<String, Object> accountMap = new Map<String, Object>();
+    //accountMap.put('Id', acc.Id);
+    accountMap.put('Name', acc.Name);
+    accountMap.put('External_Id__c', acc.Id);
 
-        String jsonBody = JSON.serialize(accounts);
+    // Серіалізація Map без атрибутів
+    String jsonBody = JSON.serialize(accountMap);
 
-        HttpRequest req = new HttpRequest();
-        req.setEndpoint('callout:SalesforceNamedCred/services/apexrest/Account/');
-        req.setHeader('content-type','application/json; charset=UTF-8');
-        req.setHeader('Accept', 'application/json');
-        req.setBody(jsonBody);
-        req.setMethod('POST');
-        Http http = new Http();
-        HttpResponse response = http.send(req);
-        System.debug('response code:'+response.getStatusCode());
-        System.debug('response body : '+response.getBody());
+    // Створення HTTP запиту
+    HttpRequest req = new HttpRequest();
+    req.setEndpoint('callout:SalesforceNamedCred/services/apexrest/Account/');
+    req.setHeader('content-type','application/json; charset=UTF-8');
+    req.setHeader('Accept', 'application/json');
+    req.setBody(jsonBody);
+    req.setMethod('POST');
 
-        if (response.getStatusCode() != 200) {
-            System.debug('Error syncing accounts: ' + response.getBody());
-        } else {
-            System.debug('Accounts synced successfully!');
-        }
-    }
+    // Логування
+    System.debug('jsonBody: ' + jsonBody);
+
+    Http http = new Http();
+    HttpResponse response = http.send(req);
+
+    // Логування відповіді
+    System.debug('response code: ' + response.getStatusCode());
+    System.debug('response body : ' + response.getBody());
+}
 
 }
+
