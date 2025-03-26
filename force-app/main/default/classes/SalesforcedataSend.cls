@@ -31,11 +31,30 @@ public static void createRecordTargetOrg() {
 
     Http http = new Http();
     HttpResponse response = http.send(req);
-
+    boolean isSuccess = response.getStatusCode() == 200;
     System.debug('response code: ' + response.getStatusCode());
     System.debug('response body : ' + response.getBody());
-}
 
+    System.debug('before IF');
+    if (isSuccess) {
+        System.debug('inside IF');
+        String responseBody = response.getBody().toString();
+        System.debug('Отримана відповідь: ' + responseBody);
+        
+        List<Account> updatedAccounts = (List<Account>) JSON.deserialize(responseBody, List<Account>.class);
+
+        System.debug('after updateAccounts');        
+        try {
+            upsert updatedAccounts External_Id__c;
+            System.debug('Upsert successful');
+        } catch (Exception e) {
+            System.debug('Upsert error: ' + e.getMessage());
+        }
+        
+    } else {
+        System.debug('Error: ' + response.getStatusCode() + ' ' + response.getBody());
+    }
+}
 }
 
 //-------------Код на іншій організації-------------
