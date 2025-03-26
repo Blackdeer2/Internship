@@ -15,9 +15,6 @@ public static void createRecordTargetOrg() {
         accountMaps.add(accountMap);
     }
 
-
-
-
     String jsonBody = JSON.serialize(accountMaps);
 
     HttpRequest req = new HttpRequest();
@@ -35,29 +32,77 @@ public static void createRecordTargetOrg() {
     System.debug('response code: ' + response.getStatusCode());
     System.debug('response body : ' + response.getBody());
 
-    System.debug('before IF');
-    if (isSuccess) {
-        System.debug('inside IF');
-        String responseBody = response.getBody().toString();
-        System.debug('Отримана відповідь: ' + responseBody);
-        
-        List<Account> updatedAccounts = (List<Account>) JSON.deserialize(responseBody, List<Account>.class);
+    if (response.getStatusCode() == 200) {
 
-        System.debug('after updateAccounts');        
-        try {
-            upsert updatedAccounts External_Id__c;
-            System.debug('Upsert successful');
-        } catch (Exception e) {
-            System.debug('Upsert error: ' + e.getMessage());
+        String responseBody = response.getBody().toString(); 
+        System.debug('var response body:' + responseBody);
+
+        if (responseBody.startsWith('"') && responseBody.endsWith('"')) {
+            responseBody = responseBody.substring(1, responseBody.length() - 1);
         }
+
+        responseBody = responseBody.replace('\\', '');
+
+        System.debug('Cleaned response body: ' + responseBody);
         
-    } else {
-        System.debug('Error: ' + response.getStatusCode() + ' ' + response.getBody());
-    }
+        List<Object> items = (List<Object>) JSON.deserializeUntyped(responseBody);
+        
+        List<Map<String, Object>> accountMapsID = new List<Map<String, Object>>();
+
+        for(Object obj: items){
+            Map<String, Object> itemMap = (Map<String, Object>) obj;
+            accountMapsID.add(itemMap);
+        }
+        System.debug('Deserialized JSON: ' + accountMapsID);
+
+        //до цього рядочка все працює чотко
+
+        List<Account> accountsToUpdate = new List<Account>();
+        Map<Id, Account> accountMap = new Map<Id, Account>();
+
+       
+        for (Account acc : accList) {
+            accountMap.put(acc.Id, acc);
+        }
+        System.debug(accountMap);
+
+
+        for (Map<String, Object> mapId : accountMapsID) {
+            if (mapId.containsKey('External_Id__c')) {
+                String externalId = (String) mapId.get('External_Id__c');  
+                Id jsonAccountId = (Id) mapId.get('Id');  
+
+                System.debug('Processing mapId: ' + mapId);
+                System.debug('externalId from mapId: ' + externalId);
+                System.debug('jsonAccountId from mapId: ' + jsonAccountId);
+
+                for(Account acc: accList){
+                    if (acc.Id == externalId) {
+                        
+                        acc.External_Id__c = jsonAccountId; 
+                        accountsToUpdate.add(acc);  
+        
+                        System.debug('Account to update: ' + acc);
+                    }
+                }
+            }
+        }
+        System.debug('finished loop');
+        System.debug(accountsToUpdate);
+
+        
+        if (!accountsToUpdate.isEmpty()) {
+            update accountsToUpdate;
+            System.debug('Updated accounts: ' + accountsToUpdate);
+        }
+}
+
+
 }
 }
 
-//-------------Код на іншій організації-------------
+
+//------------------Код з іншої організації------------------
 
 // @RestResource(urlMapping='/Account/*')
 // global class RestApiUsingConnectClass {
@@ -67,14 +112,25 @@ public static void createRecordTargetOrg() {
 //         try {
 //              String body = RestContext.request.requestBody.toString();
             
-            
-//             //Account acc = (Account) JSON.deserialize(body, Account.class);
-            
 //              List<Account> accList = (List<Account>) JSON.deserialize(body, List<Account>.class);
             
 //             upsert accList External_Id__c;
-            
-//               return 'Success: Account created or updated with External_Id__c = ';
+//             System.debug('Upsert successful');
+//             System.debug('before convert json');
+//             List<Map<String, Id>> accountMapsID= new List<Map<String, Id>>();
+        
+//             for (Account acc : accList) {
+//                 Map<String, Id> accountMap = new Map<String, Id>();
+//                 accountMap.put('Id', acc.Id);
+//                 accountMap.put('External_Id__c', acc.External_Id__c);
+
+//                 accountMapsID.add(accountMap);
+//             }
+           
+//             String IdWithExternal = JSON.serialize(accountMapsID);
+//             System.debug('JSON Id and External Id: ' + IdWithExternal);
+
+//             return IdWithExternal;
 
             
 //         } catch (Exception e) {
