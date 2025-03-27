@@ -25,7 +25,15 @@ public with sharing class AccountHandler extends TriggerHandler {
 
     public override void afterUpdate() {
         try {
-            SalesforcedataSend.syncUpdatedAccounts();
+            Set<Id> accountIds = new Set<Id>();
+            for(Account acc: this.triggerNew){
+                Account oldAcc = this.triggerMapOld.get(acc.Id);
+                if(acc.Name != oldAcc.Name || acc.Website != oldAcc.Website){
+
+                    accountIds.add(acc.Id);
+                }
+            }
+            SalesforcedataSend.syncUpdatedAccounts(accountIds);
 
         } catch (DmlException e) {
             System.debug('DML Exception in afterUpdate of AccountHandler: ' + e.getMessage());

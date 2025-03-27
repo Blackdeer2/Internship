@@ -81,7 +81,7 @@ public with sharing class SalesforcedataSend {
 
 
     @future(callout=true)
-    public static void syncUpdatedAccounts() {
+    public static void syncUpdatedAccounts(Set<Id> accountIds) {
 
         List<Field_Sync_Setting__mdt> syncSettings = [
             SELECT Field_API_Name__c FROM Field_Sync_Setting__mdt WHERE Is_Active__c = TRUE];
@@ -93,7 +93,7 @@ public with sharing class SalesforcedataSend {
 
         System.debug('Fields to sync: ' + fieldNames);
 
-        String query = 'SELECT ' + String.join(fieldNames, ', ') + ' FROM Account';
+        String query = 'SELECT ' + String.join(fieldNames, ', ') + ' FROM Account WHERE Id IN :accountIds';
 
         List<Account> accounts = Database.query(query);
 
