@@ -22,4 +22,15 @@ public with sharing class AccountHandler extends TriggerHandler {
             System.debug('Exception in afterInsert of AccountHandler: ' + e.getMessage());
         }
     }
+
+    public override void afterUpdate() {
+        try {
+            SalesforcedataSend.syncUpdatedAccounts();
+
+        } catch (DmlException e) {
+            System.debug('DML Exception in afterUpdate of AccountHandler: ' + e.getMessage());
+        } catch (Exception e) {
+            System.debug('Exception in afterUpdate of AccountHandler: ' + e.getMessage());
+        }
+    }
 }
