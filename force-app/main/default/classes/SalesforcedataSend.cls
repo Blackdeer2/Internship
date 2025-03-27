@@ -35,7 +35,6 @@ public static void createRecordTargetOrg() {
     if (response.getStatusCode() == 200) {
 
         String responseBody = response.getBody().toString(); 
-        System.debug('var response body:' + responseBody);
 
         if (responseBody.startsWith('"') && responseBody.endsWith('"')) {
             responseBody = responseBody.substring(1, responseBody.length() - 1);
@@ -72,24 +71,15 @@ public static void createRecordTargetOrg() {
                 String externalId = (String) mapId.get('External_Id__c');  
                 Id jsonAccountId = (Id) mapId.get('Id');  
 
-                System.debug('Processing mapId: ' + mapId);
-                System.debug('externalId from mapId: ' + externalId);
-                System.debug('jsonAccountId from mapId: ' + jsonAccountId);
-
                 for(Account acc: accList){
                     if (acc.Id == externalId) {
                         
                         acc.External_Id__c = jsonAccountId; 
                         accountsToUpdate.add(acc);  
-        
-                        System.debug('Account to update: ' + acc);
                     }
                 }
             }
         }
-        System.debug('finished loop');
-        System.debug(accountsToUpdate);
-
         
         if (!accountsToUpdate.isEmpty()) {
             update accountsToUpdate;
