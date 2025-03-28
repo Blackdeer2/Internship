@@ -26,18 +26,17 @@ public with sharing class AccountHandler extends TriggerHandler {
     public override void afterUpdate() {
         try {
             Set<Id> accountIds = new Set<Id>();
+            System.debug('Call getSyncFields');
+            List<String> fieldsToCheck = MetadataControler.getSyncFields();
             for(Account acc: this.triggerNew){
                 Account oldAcc = this.triggerMapOld.get(acc.Id);
-                if(acc.Name != oldAcc.Name || acc.Website != oldAcc.Website || 
-                    acc.BillingStreet != oldAcc.BillingStreet || acc.BillingCity != oldAcc.BillingCity ||
-                    acc.BillingState != oldAcc.BillingState || acc.BillingPostalCode != oldAcc.BillingPostalCode ||
-                    acc.BillingCountry != oldAcc.BillingCountry ||
-                    acc.ShippingStreet != oldAcc.ShippingStreet || acc.ShippingCity != oldAcc.ShippingCity ||
-                    acc.ShippingState != oldAcc.ShippingState || acc.ShippingPostalCode != oldAcc.ShippingPostalCode ||
-                    acc.ShippingCountry != oldAcc.ShippingCountry) {
 
-                    accountIds.add(acc.Id);
+                for(String fieldName: fieldsToCheck){
+                    if(acc.get(fieldName) != oldAcc.get(fieldName)){
+                        accountIds.add(acc.Id);
+                    }
                 }
+
             }
             SalesforcedataSend.syncUpdatedAccounts(accountIds);
 
