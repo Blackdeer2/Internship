@@ -3,28 +3,16 @@ public with sharing class SalesforcedataSend {
     @future(callout=true)
     public static void createRecordTargetOrg() {
 
-        List<Account> accList = [SELECT Id, Name, External_Id__c FROM Account];
+        List<String> fieldNames = MetadataControler.getSyncFields();
 
-        List<Map<String, Object>> accountMaps= new List<Map<String, Object>>();
-
-        for (Account acc : accList) {
-            Map<String, Object> accountMap = new Map<String, Object>();
-            //accountMap.put('Id', acc.Id);
-            accountMap.put('Name', acc.Name);
-            accountMap.put('External_Id__c', acc.Id);
-            accountMaps.add(accountMap);
-        }
-
-        String jsonBody = JSON.serialize(accountMaps);
+        List<Account> accList = Database.query(MetadataControler.generateQuery(fieldNames));
 
         HttpRequest req = new HttpRequest();
         req.setEndpoint('callout:SalesforceNamedCred/services/apexrest/Account/');
         req.setHeader('content-type','application/json; charset=UTF-8');
         req.setHeader('Accept', 'application/json');
-        req.setBody(jsonBody);
+        req.setBody(setRequestBody(accList, fieldNames));
         req.setMethod('POST');
-
-        System.debug('jsonBody: ' + jsonBody);
 
         Http http = new Http();
         HttpResponse response = http.send(req);
@@ -32,50 +20,82 @@ public with sharing class SalesforcedataSend {
         System.debug('response code: ' + response.getStatusCode());
         System.debug('response body : ' + response.getBody());
 
-        if (response.getStatusCode() == 200) {
+        List<Map<String, Object>> accountMapsID = parseResponseBody(response);
 
-            String responseBody = response.getBody().toString(); 
+        updateAccounts(accList, accountMapsID);
+
+    }
+
+    public static String setRequestBody(List<Account> accList, List<String> fieldNames){
+        System.debug('start setRequestBody');
+        List<Map<String, Object>> accountMaps= new List<Map<String, Object>>();
+
+        for (Account acc : accList) {
+            Map<String, Object> accountMap = new Map<String, Object>();
+            //accountMap.put('Id', acc.Id);
+            accountMap.put('External_Id__c', acc.Id);
+            for(String field : fieldNames){
+                accountMap.put(field, acc.get(field));
+            }
+            accountMaps.add(accountMap);
+        }
+
+        String jsonBody = JSON.serialize(accountMaps);
+        System.debug('jsonBody: ' + jsonBody);
+        System.debug('finish setRequestBody');
+
+        return jsonBody;
+    }
+
+    public static  List<Map<String, Object>> parseResponseBody( HttpResponse response){
+
+        System.debug('start parseResponseBody()');
+
+        String responseBody = response.getBody().toString(); 
             
-            List<Map<String, Object>> accountMapsID = new List<Map<String, Object>>();
+        List<Map<String, Object>> accountMapsID = new List<Map<String, Object>>();
 
-            List<Map<String, String>> items = (List<Map<String, String>>) JSON.deserialize(responseBody, List<Map<String, String>>.class);
+        List<Map<String, String>> items = (List<Map<String, String>>) JSON.deserialize(responseBody, List<Map<String, String>>.class);
 
-            for(Object obj: items){
-                Map<String, Object> itemMap = (Map<String, Object>) obj;
-                accountMapsID.add(itemMap);
-            }
-            System.debug('Deserialized JSON: ' + accountMapsID);
+        for(Object obj: items){
+            Map<String, Object> itemMap = (Map<String, Object>) obj;
+            accountMapsID.add(itemMap);
+        }
+        System.debug('Deserialized JSON: ' + accountMapsID);
+        System.debug('finish parseResponseBody()');
 
-            //до цього рядочка все працює чотко
+        return accountMapsID;
+    }
 
-            List<Account> accountsToUpdate = new List<Account>();
-            Map<Id, Account> accountMap = new Map<Id, Account>();
+    public static void updateAccounts(List<Account> accList, List<Map<String, Object>> accountMapsID){
 
-        
-            for (Account acc : accList) {
-                accountMap.put(acc.Id, acc);
-            }
+        List<Account> accountsToUpdate = new List<Account>();
+        Map<Id, Account> accountMap = new Map<Id, Account>();
+
+    
+        for (Account acc : accList) {
+            accountMap.put(acc.Id, acc);
+        }
 
 
-            for (Map<String, Object> mapId : accountMapsID) {
-                if (mapId.containsKey('External_Id__c')) {
-                    String externalId = (String) mapId.get('External_Id__c');  
-                    Id jsonAccountId = (Id) mapId.get('Id');  
+        for (Map<String, Object> mapId : accountMapsID) {
+            if (mapId.containsKey('External_Id__c')) {
+                String externalId = (String) mapId.get('External_Id__c');  
+                Id jsonAccountId = (Id) mapId.get('Id');  
 
-                    for(Account acc: accList){
-                        if (acc.Id == externalId) {
-                            
-                            acc.External_Id__c = jsonAccountId; 
-                            accountsToUpdate.add(acc);  
-                        }
+                for(Account acc: accList){
+                    if (acc.Id == externalId) {
+                        
+                        acc.External_Id__c = jsonAccountId; 
+                        accountsToUpdate.add(acc);  
                     }
                 }
             }
-            
-            if (!accountsToUpdate.isEmpty()) {
-                update accountsToUpdate;
-                System.debug('Updated accounts: ' + accountsToUpdate);
-            }
+        }
+        
+        if (!accountsToUpdate.isEmpty()) {
+            update accountsToUpdate;
+            System.debug('Updated accounts: ' + accountsToUpdate);
         }
     }
 
@@ -83,19 +103,9 @@ public with sharing class SalesforcedataSend {
     @future(callout=true)
     public static void syncUpdatedAccounts(Set<Id> accountIds) {
 
-        List<Field_Sync_Setting__mdt> syncSettings = [
-            SELECT Field_API_Name__c FROM Field_Sync_Setting__mdt WHERE Is_Active__c = TRUE];
+        List<String> fieldNames = MetadataControler.getSyncFields();
 
-        List<String> fieldNames = new List<String>();
-        for (Field_Sync_Setting__mdt setting : syncSettings) {
-            fieldNames.add(setting.Field_API_Name__c);
-        }
-
-        System.debug('Fields to sync: ' + fieldNames);
-
-        String query = 'SELECT ' + String.join(fieldNames, ', ') + ' FROM Account WHERE Id IN :accountIds';
-
-        List<Account> accounts = Database.query(query);
+        List<Account> accounts = Database.query(MetadataControler.generateQuery(fieldNames));
 
         System.debug('Accounts to send: ' + accounts);
 
@@ -129,6 +139,5 @@ public with sharing class SalesforcedataSend {
         boolean isSuccess = response.getStatusCode() == 200;
         System.debug('response code: ' + response.getStatusCode());
         System.debug('response body : ' + response.getBody());
-
     }
 }
