@@ -28,7 +28,13 @@ public with sharing class AccountHandler extends TriggerHandler {
             Set<Id> accountIds = new Set<Id>();
             for(Account acc: this.triggerNew){
                 Account oldAcc = this.triggerMapOld.get(acc.Id);
-                if(acc.Name != oldAcc.Name || acc.Website != oldAcc.Website){
+                if(acc.Name != oldAcc.Name || acc.Website != oldAcc.Website || 
+                    acc.BillingStreet != oldAcc.BillingStreet || acc.BillingCity != oldAcc.BillingCity ||
+                    acc.BillingState != oldAcc.BillingState || acc.BillingPostalCode != oldAcc.BillingPostalCode ||
+                    acc.BillingCountry != oldAcc.BillingCountry ||
+                    acc.ShippingStreet != oldAcc.ShippingStreet || acc.ShippingCity != oldAcc.ShippingCity ||
+                    acc.ShippingState != oldAcc.ShippingState || acc.ShippingPostalCode != oldAcc.ShippingPostalCode ||
+                    acc.ShippingCountry != oldAcc.ShippingCountry) {
 
                     accountIds.add(acc.Id);
                 }
