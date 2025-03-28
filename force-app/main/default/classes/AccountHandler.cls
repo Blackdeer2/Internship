@@ -15,35 +15,38 @@ public with sharing class AccountHandler extends TriggerHandler {
     public override void afterInsert() {
         try {
             AccountService.createTaskForAccount(this.triggerNew);
-            SalesforcedataSend.createRecordTargetOrg();
+
+            Set<Id> accountIds = new Map<Id, Account>(this.triggerMapNew).keySet();
+            SalesforcedataSend.createRecordTargetOrg(accountIds);
+            
         } catch (DmlException e) {
             System.debug('DML Exception in afterInsert of AccountHandler: ' + e.getMessage());
         } catch (Exception e) {
             System.debug('Exception in afterInsert of AccountHandler: ' + e.getMessage());
         }
     }
-    
-    // public override void afterUpdate() {
-    //     try {
-    //         Set<Id> accountIds = new Set<Id>();
-    //         System.debug('Call getSyncFields');
-    //         List<String> fieldsToCheck = MetadataControler.getSyncFields();
-    //         for(Account acc: this.triggerNew){
-    //             Account oldAcc = this.triggerMapOld.get(acc.Id);
 
-    //             for(String fieldName: fieldsToCheck){
-    //                 if(acc.get(fieldName) != oldAcc.get(fieldName)){
-    //                     accountIds.add(acc.Id);
-    //                 }
-    //             }
+    public override void afterUpdate() {
+        try {
+            Set<Id> accountIds = new Set<Id>();
+            System.debug('Call getSyncFields');
+            List<String> fieldsToCheck = MetadataControler.getSyncFields();
+            for(Account acc: this.triggerNew){
+                Account oldAcc = this.triggerMapOld.get(acc.Id);
 
-    //         }
-    //         SalesforcedataSend.syncUpdatedAccounts(accountIds);
+                for(String fieldName: fieldsToCheck){
+                    if(acc.get(fieldName) != oldAcc.get(fieldName)){
+                        accountIds.add(acc.Id);
+                    }
+                }
 
-    //     } catch (DmlException e) {
-    //         System.debug('DML Exception in afterUpdate of AccountHandler: ' + e.getMessage());
-    //     } catch (Exception e) {
-    //         System.debug('Exception in afterUpdate of AccountHandler: ' + e.getMessage());
-    //     }
-    // }
+            }
+            SalesforcedataSend.createRecordTargetOrg(accountIds);
+
+        } catch (DmlException e) {
+            System.debug('DML Exception in afterUpdate of AccountHandler: ' + e.getMessage());
+        } catch (Exception e) {
+            System.debug('Exception in afterUpdate of AccountHandler: ' + e.getMessage());
+        }
+    }
 }
