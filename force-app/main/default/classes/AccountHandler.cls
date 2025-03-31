@@ -16,6 +16,11 @@ public with sharing class AccountHandler extends TriggerHandler {
         try {
             AccountService.createTaskForAccount(this.triggerNew);
 
+            if(TriggerControlSync.isSyncRunning == true){
+                System.debug('Sync is already running. Skipping execution.');
+                return;
+            }
+            TriggerControlSync.isSyncRunning = true;
             Set<Id> accountIds = new Map<Id, Account>(this.triggerMapNew).keySet();
             SalesforcedataSend.createRecordTargetOrg(accountIds);
             
@@ -23,11 +28,21 @@ public with sharing class AccountHandler extends TriggerHandler {
             System.debug('DML Exception in afterInsert of AccountHandler: ' + e.getMessage());
         } catch (Exception e) {
             System.debug('Exception in afterInsert of AccountHandler: ' + e.getMessage());
+        } finally {
+            TriggerControlSync.isSyncRunning = false;
         }
     }
 
     public override void afterUpdate() {
         try {
+
+            if (TriggerControlSync.isSyncRunning) {
+                System.debug('Sync is already running. Skipping execution.');
+                return;
+            }
+
+            TriggerControlSync.isSyncRunning = true;
+
             Set<Id> accountIds = new Set<Id>();
             System.debug('Call getSyncFields');
             List<String> fieldsToCheck = MetadataControler.getSyncFields();
@@ -51,6 +66,8 @@ public with sharing class AccountHandler extends TriggerHandler {
             System.debug('DML Exception in afterUpdate of AccountHandler: ' + e.getMessage());
         } catch (Exception e) {
             System.debug('Exception in afterUpdate of AccountHandler: ' + e.getMessage());
+        }finally {
+            TriggerControlSync.isSyncRunning = false;
         }
     }
 }
