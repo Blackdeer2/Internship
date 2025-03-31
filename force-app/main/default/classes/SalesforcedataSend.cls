@@ -8,8 +8,12 @@ public with sharing class SalesforcedataSend {
         }
 
         List<String> fieldNames = MetadataControler.getSyncFields();
+        if(fieldNames == null){
+            System.debug('SalesforcedataSend.createRecordTargetOrg fieldNames == null');
+            return;
+        }
 
-        List<Account> accList = Database.query(MetadataControler.generateQuery(fieldNames) + ' WHERE Id IN :accountIds');
+        List<Account> accList = Database.query(generateQuery(fieldNames) + ' WHERE Id IN :accountIds');
 
         HttpRequest req = new HttpRequest();
         req.setEndpoint('callout:SalesforceNamedCred/services/apexrest/Account/');
@@ -20,13 +24,15 @@ public with sharing class SalesforcedataSend {
 
         Http http = new Http();
         HttpResponse response = http.send(req);
-        boolean isSuccess = response.getStatusCode() == 200;
         System.debug('response code: ' + response.getStatusCode());
         System.debug('response body : ' + response.getBody());
+
+        if(response.getStatusCode() == 200){
 
         List<Map<String, Object>> accountMapsID = parseResponseBody(response);
 
         updateAccounts(accList, accountMapsID);
+        }
     }
 
     public static String setRequestBody(List<Account> accList, List<String> fieldNames){
@@ -89,5 +95,13 @@ public with sharing class SalesforcedataSend {
             update accountsToUpdate;
             System.debug('Updated accounts: ' + accountsToUpdate);
         }
+    }
+
+    public static String generateQuery(List<String> fieldNames){
+
+        String query = 'SELECT ' + String.join(fieldNames, ', ') + ' FROM Account';
+        System.debug('MetadataControler.generateQuery:' + query);
+
+        return query;
     }
 }

@@ -31,6 +31,10 @@ public with sharing class AccountHandler extends TriggerHandler {
             Set<Id> accountIds = new Set<Id>();
             System.debug('Call getSyncFields');
             List<String> fieldsToCheck = MetadataControler.getSyncFields();
+            if(fieldsToCheck == null){
+                System.debug('afterUpdate fieldsToCheck == null');
+                return;
+            }
             for(Account acc: this.triggerNew){
                 Account oldAcc = this.triggerMapOld.get(acc.Id);
 
