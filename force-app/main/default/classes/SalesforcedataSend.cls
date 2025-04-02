@@ -43,7 +43,9 @@ public with sharing class SalesforcedataSend {
             Map<String, Object> accountMap = new Map<String, Object>();
             //accountMap.put('Id', acc.Id);
             accountMap.put('External_Id__c', acc.Id);
+            accountMap.put('Client_Namec__c', acc.Custom_Namec__c);
             accountMap.put('Created_by_Another_Org__c', true);
+            
             for(String field : fieldNames){
                 accountMap.put(field, acc.get(field));
             }

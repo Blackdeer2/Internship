@@ -20,7 +20,6 @@ public with sharing class AccountHandler extends TriggerHandler {
                 System.debug('Sync is already running. Skipping execution.');
                 return;
             }
-            TriggerControlSync.isSyncRunning = true;
             Set<Id> accountIds = new Map<Id, Account>(this.triggerMapNew).keySet();
             SalesforcedataSend.createRecordTargetOrg(accountIds);
             
@@ -28,46 +27,22 @@ public with sharing class AccountHandler extends TriggerHandler {
             System.debug('DML Exception in afterInsert of AccountHandler: ' + e.getMessage());
         } catch (Exception e) {
             System.debug('Exception in afterInsert of AccountHandler: ' + e.getMessage());
-        } finally {
-            TriggerControlSync.isSyncRunning = false;
         }
     }
 
     public override void afterUpdate() {
         try {
 
-            if (TriggerControlSync.isSyncRunning) {
+            if (TriggerControlSync.isSyncRunning == true) {
                 System.debug('Sync is already running. Skipping execution.');
                 return;
             }
-
-            TriggerControlSync.isSyncRunning = true;
-
-            Set<Id> accountIds = new Set<Id>();
-            System.debug('Call getSyncFields');
-            List<String> fieldsToCheck = MetadataControler.getSyncFields();
-            if(fieldsToCheck == null){
-                System.debug('afterUpdate fieldsToCheck == null');
-                return;
-            }
-            for(Account acc: this.triggerNew){
-                Account oldAcc = this.triggerMapOld.get(acc.Id);
-
-                for(String fieldName: fieldsToCheck){
-                    if(acc.get(fieldName) != oldAcc.get(fieldName)){
-                        accountIds.add(acc.Id);
-                    }
-                }
-
-            }
-            SalesforcedataSend.createRecordTargetOrg(accountIds);
+            AccountService.sendUpdatedAccountToAnotherOrg(this.triggerNew, this.triggerMapOld);
 
         } catch (DmlException e) {
             System.debug('DML Exception in afterUpdate of AccountHandler: ' + e.getMessage());
         } catch (Exception e) {
             System.debug('Exception in afterUpdate of AccountHandler: ' + e.getMessage());
-        }finally {
-            TriggerControlSync.isSyncRunning = false;
         }
     }
 }

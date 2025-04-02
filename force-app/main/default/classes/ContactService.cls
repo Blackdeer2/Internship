@@ -30,7 +30,7 @@ public with sharing class ContactService {
         }
         for(Contact c : contacts){
             if(String.isBlank(c.Phone) || !Pattern.matches('^[0-9]+$', c.Phone) || c.Phone.length() < 10 || c.Phone.length() > 12){
-                c.Phone.addError('The Phone field must contain only numbers and be between 10 and 12 characters long.');
+                c.Phone.addError('The Phone field must contain only numbers and be between 10 and 12 characters long2.');
             }
         }
     }

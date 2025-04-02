@@ -40,17 +40,39 @@ public with sharing class OpportunityService {
     }
 
     @AuraEnabled(cacheable=true)
-    public static Map<String, Decimal> getStagesWithTotalAmount(Id accountId){
+    public static Map<String, Object> getStagesWithTotalAmount(Id accountId){
+        Map<String, Object> stagesData = new Map<String, Object>();
+    
+        List<AggregateResult> results = [
+            SELECT StageName, SUM(Amount) totalAmount 
+            FROM Opportunity 
+            WHERE AccountId = :accountId 
+            GROUP BY StageName
+        ];
+        
         Map<String, Decimal> stagesWithTotalAmount = new Map<String, Decimal>();
-        List<AggregateResult> results = [SELECT StageName, SUM(Amount) totalAmount 
-                                            FROM Opportunity 
-                                            WHERE AccountId = :accountId 
-                                            GROUP BY StageName];
-
         for(AggregateResult result : results){
-            stagesWithTotalAmount.put((String)result.get('StageName'), (Decimal)result.get('totalAmount'));
+            stagesWithTotalAmount.put((String) result.get('StageName'), (Decimal) result.get('totalAmount'));
         }
-
-        return stagesWithTotalAmount;
+    
+        Map<String, List<Opportunity>> stageOpportunities = new Map<String, List<Opportunity>>();
+        List<Opportunity> opportunities = [
+            SELECT Id, Name, StageName, Amount 
+            FROM Opportunity 
+            WHERE AccountId = :accountId
+        ];
+        
+        for (Opportunity opp : opportunities) {
+            if (!stageOpportunities.containsKey(opp.StageName)) {
+                stageOpportunities.put(opp.StageName, new List<Opportunity>());
+            }
+            stageOpportunities.get(opp.StageName).add(opp);
+        }
+    
+        stagesData.put('amounts', stagesWithTotalAmount);
+        stagesData.put('opportunities', stageOpportunities);
+        stagesData.put('listOpp', opportunities);
+    
+        return stagesData;
     }
 }
