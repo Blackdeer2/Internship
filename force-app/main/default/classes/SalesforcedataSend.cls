@@ -1,5 +1,14 @@
 public with sharing class SalesforcedataSend {
 
+    private static String endPoint = 'callout:SalesforceNamedCred/services/apexrest/Account/';
+    private static String externalIdField = 'External_Id__c';
+    private static String clientNamec = 'Client_Namec__c';
+    private static String id = 'Id';
+    private static final Map<String, String> strHeader = new Map<String, String>{
+        'content-type' => 'application/json; charset=UTF-8',
+        'Accept' => 'application/json'
+    };
+
     @future(callout=true)
     public static void createRecordTargetOrg(Set<Id> accountIds) {
 
@@ -9,12 +18,13 @@ public with sharing class SalesforcedataSend {
 
         List<String> fieldNames = MetadataControler.getSyncFields();
 
-        List<Account> accList = Database.query(generateQuery(fieldNames) + ' WHERE Id IN :accountIds');
+        List<Account> accList = Database.query(generateQuery(fieldNames));
 
         HttpRequest req = new HttpRequest();
-        req.setEndpoint('callout:SalesforceNamedCred/services/apexrest/Account/');
-        req.setHeader('content-type','application/json; charset=UTF-8');
-        req.setHeader('Accept', 'application/json');
+        req.setEndpoint(endPoint);
+        for (String key : strHeader.keySet()) {
+            req.setHeader(key, strHeader.get(key));
+        }
         req.setBody(setRequestBody(accList, fieldNames));
         req.setMethod('POST');
 
@@ -38,8 +48,8 @@ public with sharing class SalesforcedataSend {
         for (Account acc : accList) {
             Map<String, Object> accountMap = new Map<String, Object>();
             //accountMap.put('Id', acc.Id);
-            accountMap.put('External_Id__c', acc.Id);
-            accountMap.put('Client_Namec__c', acc.Custom_Namec__c);
+            accountMap.put(externalIdField, acc.Id);
+            accountMap.put(clientNamec, acc.Custom_Namec__c);
             
             for(String field : fieldNames){
                 accountMap.put(field, acc.get(field));
@@ -78,11 +88,11 @@ public with sharing class SalesforcedataSend {
 
 
         for (Map<String, Object> mapId : accountMapsID) {
-            if (mapId.containsKey('External_Id__c') && mapId.containsKey('Id')) {
-                Id externalId = (Id) mapId.get('External_Id__c');
+            if (mapId.containsKey(externalIdField) && mapId.containsKey(id)) {
+                Id externalId = (Id) mapId.get(externalIdField);
                 if (accountMap.containsKey(externalId)) {
                     Account acc = accountMap.get(externalId);
-                    acc.External_Id__c = (Id) mapId.get('Id');
+                    acc.External_Id__c = (Id) mapId.get(id);
                     accountsToUpdate.add(acc);
                 }
             }
@@ -97,9 +107,11 @@ public with sharing class SalesforcedataSend {
 
     public static String generateQuery(List<String> fieldNames){
 
-        String query = 'SELECT ' + String.join(fieldNames, ', ') + ' FROM Account';
-        System.debug('MetadataControler.generateQuery:' + query);
+        String queryTemplate = 'SELECT {0} FROM Account WHERE Id IN :accountIds';
+        String formattedQuery  = String.format(queryTemplate, new List<String>{String.join(fieldNames, ', ')});
 
-        return query;
+        System.debug('MetadataControler.generateQuery:' + formattedQuery);
+
+        return formattedQuery;
     }
 }
