@@ -45,6 +45,14 @@ public with sharing class AccountService {
         SalesforcedataSend.createRecordTargetOrg(accountIds);
 
     }
+
+
+    public static void sendCreatedAccountToAnotherOrg(Map<Id, Account> accountMapsNew){
+
+        Set<Id> accountIds = new Map<Id, Account>(accountMapsNew).keySet();
+        SalesforcedataSend.createRecordTargetOrg(accountIds);
+
+    }
     
 
 }

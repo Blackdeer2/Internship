@@ -8,10 +8,6 @@ public with sharing class SalesforcedataSend {
         }
 
         List<String> fieldNames = MetadataControler.getSyncFields();
-        if(fieldNames == null){
-            System.debug('SalesforcedataSend.createRecordTargetOrg fieldNames == null');
-            return;
-        }
 
         List<Account> accList = Database.query(generateQuery(fieldNames) + ' WHERE Id IN :accountIds');
 
@@ -44,7 +40,6 @@ public with sharing class SalesforcedataSend {
             //accountMap.put('Id', acc.Id);
             accountMap.put('External_Id__c', acc.Id);
             accountMap.put('Client_Namec__c', acc.Custom_Namec__c);
-            accountMap.put('Created_by_Another_Org__c', true);
             
             for(String field : fieldNames){
                 accountMap.put(field, acc.get(field));

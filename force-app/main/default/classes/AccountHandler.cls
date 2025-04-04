@@ -20,8 +20,8 @@ public with sharing class AccountHandler extends TriggerHandler {
                 System.debug('Sync is already running. Skipping execution.');
                 return;
             }
-            Set<Id> accountIds = new Map<Id, Account>(this.triggerMapNew).keySet();
-            SalesforcedataSend.createRecordTargetOrg(accountIds);
+
+            AccountService.sendCreatedAccountToAnotherOrg(this.triggerMapNew);
             
         } catch (DmlException e) {
             System.debug('DML Exception in afterInsert of AccountHandler: ' + e.getMessage());
